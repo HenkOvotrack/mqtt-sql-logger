@@ -184,14 +184,14 @@ class MqttSqlLoggerService : BackgroundService
         _client.DisconnectedAsync += async e =>
         {
             if (stoppingToken.IsCancellationRequested) return;
-            
+
             // Prevent multiple simultaneous reconnection attempts
             if (!_reconnectLock.Wait(0))
             {
                 _logger.LogDebug("Another reconnection attempt is already in progress, skipping");
                 return;
             }
-            
+
             try
             {
                 var delayMs = RandomJitteredBackoffMs(e.Reason);
@@ -216,7 +216,7 @@ class MqttSqlLoggerService : BackgroundService
     {
         // Use the reconnection lock to prevent multiple simultaneous retry attempts
         await _reconnectLock.WaitAsync(ct);
-        
+
         try
         {
             var retryCount = 0;
