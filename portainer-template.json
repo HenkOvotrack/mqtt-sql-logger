@@ -1,0 +1,114 @@
+{
+  "version": "3",
+  "templates": [
+    {
+      "type": 3,
+      "title": "MQTT SQL Logger",
+      "description": "Logs MQTT messages to SQL Server database",
+      "categories": ["IoT", "Logging", "MQTT"],
+      "platform": "linux",
+      "logo": "https://raw.githubusercontent.com/eclipse/mosquitto/master/logo/mosquitto-text-side-28.png",
+      "repository": {
+        "url": "https://github.com/yourusername/mqtt-sql-logger",
+        "stackfile": "docker-compose.yml"
+      },
+      "env": [
+        {
+          "name": "MQTT__BROKER_HOST",
+          "label": "MQTT Broker Host",
+          "description": "Hostname or IP address of the MQTT broker",
+          "default": "localhost"
+        },
+        {
+          "name": "MQTT__BROKER_PORT",
+          "label": "MQTT Broker Port",
+          "description": "Port number of the MQTT broker",
+          "default": "1883"
+        },
+        {
+          "name": "MQTT__CLIENT_ID",
+          "label": "MQTT Client ID",
+          "description": "Unique identifier for this MQTT client",
+          "default": "mqtt-sql-logger-portainer"
+        },
+        {
+          "name": "MQTT__USERNAME",
+          "label": "MQTT Username",
+          "description": "Username for MQTT broker authentication (optional)"
+        },
+        {
+          "name": "MQTT__PASSWORD",
+          "label": "MQTT Password",
+          "description": "Password for MQTT broker authentication (optional)"
+        },
+        {
+          "name": "MQTT__TOPICS",
+          "label": "MQTT Topics",
+          "description": "Comma-separated list of MQTT topics to subscribe to",
+          "default": "tele/#,stat/#"
+        },
+        {
+          "name": "MQTT__QOS",
+          "label": "MQTT QoS Level",
+          "description": "Quality of Service level (0, 1, or 2)",
+          "default": "1"
+        },
+        {
+          "name": "SQL__CONNECTION_STRING",
+          "label": "SQL Server Connection String",
+          "description": "Connection string for SQL Server database"
+        },
+        {
+          "name": "SQL__CREATE_TABLE",
+          "label": "Create SQL Table",
+          "description": "Whether to create the table if it doesn't exist",
+          "default": "true",
+          "select": [
+            {
+              "text": "Yes",
+              "value": "true",
+              "default": true
+            },
+            {
+              "text": "No",
+              "value": "false"
+            }
+          ]
+        },
+        {
+          "name": "LOG__LEVEL",
+          "label": "Log Level",
+          "description": "Minimum log level to output",
+          "default": "Information",
+          "select": [
+            {
+              "text": "Trace",
+              "value": "Trace"
+            },
+            {
+              "text": "Debug",
+              "value": "Debug"
+            },
+            {
+              "text": "Information",
+              "value": "Information",
+              "default": true
+            },
+            {
+              "text": "Warning",
+              "value": "Warning"
+            },
+            {
+              "text": "Error",
+              "value": "Error"
+            },
+            {
+              "text": "Critical",
+              "value": "Critical"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

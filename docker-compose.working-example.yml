@@ -1,0 +1,100 @@
+version: "3.8"
+
+# This is a WORKING EXAMPLE with real MQTT broker and SQL Server
+# Use this to test your MQTT SQL Logger with actual working services
+
+services:
+  # MQTT Broker (Eclipse Mosquitto)
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: mosquitto-test
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - mosquitto_config:/mosquitto/config
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_logs:/mosquitto/log
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mosquitto_pub -h localhost -t test -m 'health-check' || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # SQL Server Database
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver-test
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "YourStrong@Passw0rd123"
+      MSSQL_PID: "Express"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'YourStrong@Passw0rd123' -Q 'SELECT 1' || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # MQTT SQL Logger Application
+  mqtt-sql-logger:
+    image: mqtt-sql-logger:latest
+    container_name: mqtt-sql-logger-test
+    restart: unless-stopped
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+      sqlserver:
+        condition: service_healthy
+
+    environment:
+      # MQTT Configuration - Can be overridden with .env file
+      MQTT__BROKER_HOST: ${MQTT_BROKER_HOST:-mosquitto}
+      MQTT__BROKER_PORT: ${MQTT_BROKER_PORT:-1883}
+      MQTT__CLIENT_ID: ${MQTT_CLIENT_ID:-mqtt-sql-logger-test}
+      MQTT__USERNAME: ${MQTT_USERNAME:-}
+      MQTT__PASSWORD: ${MQTT_PASSWORD:-}
+      MQTT__TOPICS: ${MQTT_TOPICS:-test/#,demo/#,sensors/#}
+      MQTT__QOS: ${MQTT_QOS:-1}
+
+      # SQL Server Configuration - Can be overridden with .env file
+      SQL__CONNECTION_STRING: ${SQL_CONNECTION_STRING:-Server=sqlserver;Database=MqttLogs;User Id=sa;Password=YourStrong@Passw0rd123;TrustServerCertificate=True;}
+      SQL__CREATE_TABLE: ${SQL_CREATE_TABLE:-true}
+
+      # Startup Configuration
+      STARTUP__DELAY_MS: ${STARTUP_DELAY_MS:-5000}
+
+      # Logging Configuration
+      LOG__LEVEL: ${LOG_LEVEL:-Information}
+
+    healthcheck:
+      test:
+        ["CMD-SHELL", "ps aux | grep -v grep | grep -q MqttSqlLogger || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  mosquitto_config:
+  mosquitto_data:
+  mosquitto_logs:
+  sqlserver_data:
+
+networks:
+  default:
+    name: mqtt-logger-network

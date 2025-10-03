@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  mqtt-sql-logger:
+    image: henkovotrack/mqtt-sql-logger:v1.0.1
+    container_name: mqtt-sql-logger
+    restart: unless-stopped
+
+    environment:
+      # MQTT Configuration - Values loaded from .env file
+      MQTT__BROKER_HOST: ${MQTT_BROKER_HOST}
+      MQTT__BROKER_PORT: ${MQTT_BROKER_PORT:-1883}
+      MQTT__CLIENT_ID: ${MQTT_CLIENT_ID:-mqtt-sql-logger-docker}
+      MQTT__USERNAME: ${MQTT_USERNAME}
+      MQTT__PASSWORD: ${MQTT_PASSWORD}
+      MQTT__TOPICS: ${MQTT_TOPICS:-tele/#,stat/#,shellies/#}
+      MQTT__QOS: ${MQTT_QOS:-1}
+
+      # SQL Server Configuration - Values loaded from .env file
+      SQL__CONNECTION_STRING: ${SQL_CONNECTION_STRING}
+      SQL__CREATE_TABLE: ${SQL_CREATE_TABLE:-true}
+
+      # Startup Configuration
+      STARTUP__DELAY_MS: ${STARTUP_DELAY_MS:-0}
+
+      # Logging Configuration
+      LOG__LEVEL: ${LOG_LEVEL:-Information}

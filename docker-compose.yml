@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  mqtt-sql-logger:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mqtt-sql-logger
+    restart: unless-stopped
+
+    environment:
+      MQTT__BROKER_HOST: "172.25.60.204"
+      MQTT__BROKER_PORT: "1883"
+      MQTT__CLIENT_ID: "mqtt-sql-logger-docker"
+      MQTT__USERNAME: "rabbitmq"
+      MQTT__PASSWORD: "Passw0rd"
+      MQTT__TOPICS: "rfid/#,EK9160/#"
+      MQTT__QOS: "1"
+      SQL__CONNECTION_STRING: "server=172.25.60.129,61662;database=OVOTRACK_TEST1_HT;UID=ovotrackadmin;Password=0V0track/1234;Encrypt=False;"
+      SQL__CREATE_TABLE: "true"
+      STARTUP__DELAY_MS: "10000"
+      LOG__LEVEL: "Trace"
+      DOTNET_ENVIRONMENT: "Development"
+
+    healthcheck:
+      test:
+        ["CMD-SHELL", "ps aux | grep -v grep | grep -q MqttSqlLogger || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s

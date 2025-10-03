@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  mqtt-sql-logger:
+    image: mqtt-sql-logger:latest
+    container_name: mqtt-sql-logger
+    restart: unless-stopped
+    
+    environment:
+      MQTT__BROKER_HOST: "${MQTT_BROKER_HOST:-localhost}"
+      MQTT__BROKER_PORT: "${MQTT_BROKER_PORT:-1883}"
+      MQTT__CLIENT_ID: "${MQTT_CLIENT_ID:-mqtt-sql-logger-portainer}"
+      MQTT__USERNAME: "${MQTT_USERNAME}"
+      MQTT__PASSWORD: "${MQTT_PASSWORD}"
+      MQTT__TOPICS: "${MQTT_TOPICS:-tele/#,stat/#}"
+      MQTT__QOS: "${MQTT_QOS:-1}"
+      SQL__CONNECTION_STRING: "${SQL_CONNECTION_STRING}"
+      SQL__CREATE_TABLE: "${SQL_CREATE_TABLE:-true}"
+      LOG__LEVEL: "${LOG_LEVEL:-Information}"
+    
+    healthcheck:
+      test: ["CMD-SHELL", "ps aux | grep -v grep | grep -q MqttSqlLogger || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
