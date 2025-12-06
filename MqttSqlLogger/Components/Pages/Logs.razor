@@ -1,0 +1,368 @@
+@page "/logs"
+@inject LogQueryService LogService
+@inject ILogger<Logs> Logger
+
+<PageTitle>Message Logs - Ovotrack</PageTitle>
+
+<div class="ovo-app">
+    <!-- Header -->
+    <header class="ovo-header">
+        <div class="ovo-header-title">
+            <span class="material-symbols-outlined">database</span>
+            Message Logs
+        </div>
+        <div class="ovo-header-actions">
+            <a href="/" class="ovo-btn ovo-btn-header">
+                <span class="material-symbols-outlined">settings</span>
+                Config
+            </a>
+        </div>
+    </header>
+
+    <!-- Content -->
+    <div class="ovo-content">
+        <!-- Filter Card -->
+        <div class="ovo-card" style="margin-bottom: 1.5rem;">
+            <div class="ovo-card-header">
+                <h2 class="ovo-card-title">
+                    <span class="material-symbols-outlined">filter_alt</span>
+                    Filters
+                </h2>
+                @if (_hasActiveFilters)
+                {
+                    <button class="ovo-btn ovo-btn-link" @onclick="ClearFilters">
+                        <span class="material-symbols-outlined">close</span>
+                        Clear
+                    </button>
+                }
+            </div>
+            <div class="ovo-card-body" style="padding: 1rem;">
+                <div class="ovo-filter-grid">
+                    <div class="ovo-filter-group">
+                        <label class="ovo-filter-label">Topic</label>
+                        <select class="ovo-input" @bind="_topicFilter" @bind:after="ApplyFiltersAsync">
+                            <option value="">All topics</option>
+                            @if (_availableTopics != null)
+                            {
+                                @foreach (var topic in _availableTopics)
+                                {
+                                    <option value="@topic">@topic</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="ovo-filter-group">
+                        <label class="ovo-filter-label">Search payload</label>
+                        <div class="ovo-input-group">
+                            <input type="text" class="ovo-input" placeholder="Search in payload..."
+                                   @bind="_searchFilter" @bind:event="oninput" @onkeyup="HandleSearchKeyUp" />
+                            @if (!string.IsNullOrEmpty(_searchFilter))
+                            {
+                                <button class="ovo-input-clear" @onclick="() => { _searchFilter = string.Empty; _ = ApplyFiltersAsync(); }">
+                                    <span class="material-symbols-outlined">close</span>
+                                </button>
+                            }
+                        </div>
+                    </div>
+                    <div class="ovo-filter-group">
+                        <label class="ovo-filter-label">From</label>
+                        <input type="datetime-local" class="ovo-input" @bind="_fromFilter" @bind:after="ApplyFiltersAsync" />
+                    </div>
+                    <div class="ovo-filter-group">
+                        <label class="ovo-filter-label">To</label>
+                        <input type="datetime-local" class="ovo-input" @bind="_toFilter" @bind:after="ApplyFiltersAsync" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Card -->
+        <div class="ovo-card">
+            <div class="ovo-card-header">
+                <h2 class="ovo-card-title">
+                    <span class="material-symbols-outlined">list</span>
+                    Messages
+                    @if (_result != null)
+                    {
+                        <span class="ovo-badge ovo-badge-muted" style="margin-left: 0.5rem;">
+                            @_result.TotalCount.ToString("N0") total
+                        </span>
+                    }
+                </h2>
+                <button class="ovo-btn ovo-btn-icon" @onclick="RefreshAsync" disabled="@_isLoading">
+                    <span class="material-symbols-outlined @(_isLoading ? "ovo-spin" : "")">refresh</span>
+                </button>
+            </div>
+            <div class="ovo-card-body">
+                @if (_isLoading && _result == null)
+                {
+                    <div class="ovo-loading">
+                        <div class="ovo-spinner"></div>
+                        <span style="margin-top: 1rem;">Loading messages...</span>
+                    </div>
+                }
+                else if (_result == null || _result.Messages.Count == 0)
+                {
+                    <div class="ovo-empty">
+                        <div class="ovo-empty-icon">
+                            <span class="material-symbols-outlined" style="font-size: 3rem;">inbox</span>
+                        </div>
+                        <p class="ovo-empty-text">No messages found</p>
+                        <p class="ovo-empty-subtext">
+                            @if (_hasActiveFilters)
+                            {
+                                <text>Try adjusting your filters</text>
+                            }
+                            else
+                            {
+                                <text>Enable logging for topics on the Config page</text>
+                            }
+                        </p>
+                    </div>
+                }
+                else
+                {
+                    <table class="ovo-table ovo-table-logs">
+                        <thead>
+                            <tr>
+                                <th class="col-time">Received</th>
+                                <th class="col-topic">Topic</th>
+                                <th class="col-payload">Payload</th>
+                                <th class="col-qos">QoS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var msg in _result.Messages)
+                            {
+                                <tr @onclick="() => SelectMessage(msg)" class="@(_selectedMessage?.Id == msg.Id ? "selected" : "")">
+                                    <td class="col-time">@msg.ReceivedAt.ToString("HH:mm:ss.fff")</td>
+                                    <td class="col-topic"><code>@TruncateTopic(msg.Topic)</code></td>
+                                    <td class="col-payload">
+                                        <span class="payload-preview">@TruncatePayload(msg.PayloadText)</span>
+                                    </td>
+                                    <td class="col-qos">
+                                        @if (msg.Retained)
+                                        {
+                                            <span class="ovo-badge ovo-badge-warning" title="Retained">R</span>
+                                        }
+                                        @msg.QoS
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+
+                    <!-- Pagination -->
+                    @if (_result.TotalPages > 1)
+                    {
+                        <div class="ovo-pagination">
+                            <button class="ovo-btn ovo-btn-icon" disabled="@(_result.Page <= 1)" @onclick="PreviousPage">
+                                <span class="material-symbols-outlined">chevron_left</span>
+                            </button>
+                            <span class="ovo-pagination-info">
+                                Page @_result.Page of @_result.TotalPages
+                            </span>
+                            <button class="ovo-btn ovo-btn-icon" disabled="@(_result.Page >= _result.TotalPages)" @onclick="NextPage">
+                                <span class="material-symbols-outlined">chevron_right</span>
+                            </button>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <!-- Message Detail Panel -->
+        @if (_selectedMessage != null)
+        {
+            <div class="ovo-detail-panel">
+                <div class="ovo-detail-header">
+                    <h3>Message Details</h3>
+                    <button class="ovo-btn ovo-btn-icon" @onclick="() => _selectedMessage = null">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <div class="ovo-detail-body">
+                    <div class="ovo-detail-row">
+                        <span class="ovo-detail-label">ID</span>
+                        <span class="ovo-detail-value">@_selectedMessage.Id</span>
+                    </div>
+                    <div class="ovo-detail-row">
+                        <span class="ovo-detail-label">Received</span>
+                        <span class="ovo-detail-value">@_selectedMessage.ReceivedAt.ToString("yyyy-MM-dd HH:mm:ss.fff")</span>
+                    </div>
+                    <div class="ovo-detail-row">
+                        <span class="ovo-detail-label">Topic</span>
+                        <span class="ovo-detail-value"><code>@_selectedMessage.Topic</code></span>
+                    </div>
+                    <div class="ovo-detail-row">
+                        <span class="ovo-detail-label">QoS</span>
+                        <span class="ovo-detail-value">@_selectedMessage.QoS @(_selectedMessage.Retained ? "(Retained)" : "")</span>
+                    </div>
+                    <div class="ovo-detail-row ovo-detail-row-full">
+                        <span class="ovo-detail-label">Payload</span>
+                        <pre class="ovo-detail-payload">@FormatJson(_selectedMessage.PayloadText)</pre>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Footer -->
+    <footer class="ovo-footer">
+        <span>MQTT SQL Logger | Powered by <strong style="color: var(--ovo-primary);">Ovotrack</strong></span>
+    </footer>
+</div>
+
+@code {
+    private LogQueryResult? _result;
+    private List<string>? _availableTopics;
+    private LogMessageViewModel? _selectedMessage;
+    private bool _isLoading;
+
+    // Filters
+    private string _topicFilter = string.Empty;
+    private string _searchFilter = string.Empty;
+    private DateTime? _fromFilter;
+    private DateTime? _toFilter;
+    private int _currentPage = 1;
+
+    private System.Timers.Timer? _searchDebounce;
+
+    private bool _hasActiveFilters =>
+        !string.IsNullOrEmpty(_topicFilter) ||
+        !string.IsNullOrEmpty(_searchFilter) ||
+        _fromFilter.HasValue ||
+        _toFilter.HasValue;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _searchDebounce = new System.Timers.Timer(300);
+        _searchDebounce.Elapsed += async (_, _) =>
+        {
+            _searchDebounce.Stop();
+            await InvokeAsync(ApplyFiltersAsync);
+        };
+
+        await LoadTopicsAsync();
+        await RefreshAsync();
+    }
+
+    private async Task LoadTopicsAsync()
+    {
+        try
+        {
+            _availableTopics = await LogService.GetDistinctTopicsAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load topics");
+        }
+    }
+
+    private async Task RefreshAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            _result = await LogService.QueryAsync(new LogQueryRequest
+            {
+                Topic = string.IsNullOrEmpty(_topicFilter) ? null : _topicFilter,
+                Search = string.IsNullOrEmpty(_searchFilter) ? null : _searchFilter,
+                FromUtc = _fromFilter,
+                ToUtc = _toFilter,
+                Page = _currentPage,
+                PageSize = 50
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load messages");
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        _currentPage = 1;
+        await RefreshAsync();
+    }
+
+    private void HandleSearchKeyUp(KeyboardEventArgs e)
+    {
+        _searchDebounce?.Stop();
+        _searchDebounce?.Start();
+    }
+
+    private async Task ClearFilters()
+    {
+        _topicFilter = string.Empty;
+        _searchFilter = string.Empty;
+        _fromFilter = null;
+        _toFilter = null;
+        _currentPage = 1;
+        await RefreshAsync();
+    }
+
+    private async Task PreviousPage()
+    {
+        if (_currentPage > 1)
+        {
+            _currentPage--;
+            await RefreshAsync();
+        }
+    }
+
+    private async Task NextPage()
+    {
+        if (_result != null && _currentPage < _result.TotalPages)
+        {
+            _currentPage++;
+            await RefreshAsync();
+        }
+    }
+
+    private void SelectMessage(LogMessageViewModel msg)
+    {
+        _selectedMessage = _selectedMessage?.Id == msg.Id ? null : msg;
+    }
+
+    private static string TruncateTopic(string topic)
+    {
+        if (topic.Length <= 50) return topic;
+        var parts = topic.Split('/');
+        if (parts.Length <= 2) return topic[..47] + "...";
+        return $".../{parts[^2]}/{parts[^1]}";
+    }
+
+    private static string TruncatePayload(string? payload)
+    {
+        if (string.IsNullOrEmpty(payload)) return "(empty)";
+        if (payload.Length <= 100) return payload;
+        return payload[..97] + "...";
+    }
+
+    private static string FormatJson(string? json)
+    {
+        if (string.IsNullOrEmpty(json)) return "(empty)";
+        try
+        {
+            var parsed = System.Text.Json.JsonDocument.Parse(json);
+            return System.Text.Json.JsonSerializer.Serialize(parsed, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        }
+        catch
+        {
+            return json;
+        }
+    }
+
+    public void Dispose()
+    {
+        _searchDebounce?.Dispose();
+    }
+}

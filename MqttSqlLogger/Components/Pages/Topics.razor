@@ -1,0 +1,240 @@
+@page "/"
+@page "/topics"
+@inject TopicFilterService FilterService
+@inject ILogger<Topics> Logger
+
+<PageTitle>MQTT Topic Filter - Ovotrack</PageTitle>
+
+<div class="ovo-app">
+    <!-- Header -->
+    <header class="ovo-header">
+        <div class="ovo-header-title">
+            <span class="material-symbols-outlined">sensors</span>
+            MQTT Topic Filter
+        </div>
+        <div class="ovo-header-actions">
+            <a href="/logs" class="ovo-btn ovo-btn-header">
+                <span class="material-symbols-outlined">database</span>
+                Logs
+            </a>
+            <button class="ovo-btn ovo-btn-header" @onclick="RefreshAsync" disabled="@_isLoading">
+                <span class="material-symbols-outlined">refresh</span>
+                @(_isLoading ? "Loading..." : "Refresh")
+            </button>
+        </div>
+    </header>
+
+    <!-- Content -->
+    <div class="ovo-content">
+        <!-- Main Switch Card -->
+        @if (_stats != null)
+        {
+            <div class="ovo-main-switch-card @(_stats.GlobalLoggingEnabled ? "" : "disabled")">
+                <div class="ovo-main-switch-content">
+                    <div class="ovo-main-switch-info">
+                        <span class="material-symbols-outlined">@(_stats.GlobalLoggingEnabled ? "radio_button_checked" : "radio_button_unchecked")</span>
+                        <div>
+                            <div class="ovo-main-switch-title">
+                                @(_stats.GlobalLoggingEnabled ? "Logging Active" : "Logging Paused")
+                            </div>
+                            <div class="ovo-main-switch-subtitle">
+                                @if (_stats.GlobalLoggingEnabled)
+                                {
+                                    <text>Messages are being logged to the database</text>
+                                }
+                                else
+                                {
+                                    <text>All logging is paused - messages are being received but not logged</text>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <label class="ovo-toggle ovo-toggle-large">
+                        <input type="checkbox"
+                               checked="@_stats.GlobalLoggingEnabled"
+                               @onchange="HandleGlobalToggle" />
+                        <span class="ovo-toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        }
+
+        <!-- Stats Bar -->
+        @if (_stats != null)
+        {
+            <div class="ovo-stats-bar">
+                <div class="ovo-stat-card">
+                    <div class="ovo-stat-label">Discovered</div>
+                    <div class="ovo-stat-value">@_stats.TopicsDiscovered</div>
+                </div>
+                <div class="ovo-stat-card">
+                    <div class="ovo-stat-label">Enabled</div>
+                    <div class="ovo-stat-value success">@_stats.TopicsEnabled</div>
+                </div>
+                <div class="ovo-stat-card">
+                    <div class="ovo-stat-label">Messages Received</div>
+                    <div class="ovo-stat-value">@_stats.TotalReceived.ToString("N0")</div>
+                </div>
+                <div class="ovo-stat-card">
+                    <div class="ovo-stat-label">Messages Logged</div>
+                    <div class="ovo-stat-value primary">@_stats.TotalLogged.ToString("N0")</div>
+                </div>
+            </div>
+        }
+
+        <!-- Topics Card -->
+        <div class="ovo-card">
+            <div class="ovo-card-header">
+                <h2 class="ovo-card-title">
+                    <span class="material-symbols-outlined">topic</span>
+                    Discovered Topics
+                </h2>
+                @if (_stats != null && _stats.TopicsEnabled > 0)
+                {
+                    <span class="ovo-badge ovo-badge-success">
+                        @_stats.TopicsEnabled logging
+                    </span>
+                }
+            </div>
+            <div class="ovo-card-body">
+                @if (_topics == null)
+                {
+                    <div class="ovo-loading">
+                        <div class="ovo-spinner"></div>
+                        <span style="margin-top: 1rem;">Loading topics...</span>
+                    </div>
+                }
+                else if (_topics.Count == 0)
+                {
+                    <div class="ovo-empty">
+                        <div class="ovo-empty-icon">
+                            <span class="material-symbols-outlined" style="font-size: 3rem;">wifi_off</span>
+                        </div>
+                        <p class="ovo-empty-text">No MQTT messages received yet</p>
+                        <p class="ovo-empty-subtext">Topics will appear automatically as messages arrive from the broker</p>
+                    </div>
+                }
+                else
+                {
+                    <table class="ovo-table">
+                        <thead>
+                            <tr>
+                                <th class="col-toggle">Log</th>
+                                <th class="col-topic">Topic</th>
+                                <th class="col-number">Received</th>
+                                <th class="col-number">Logged</th>
+                                <th class="col-rate">Dedup %</th>
+                                <th class="col-time">Last Seen</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var topic in _topics)
+                            {
+                                <tr class="@(topic.IsEnabled ? "" : "disabled")">
+                                    <td class="col-toggle">
+                                        <label class="ovo-toggle">
+                                            <input type="checkbox"
+                                                   checked="@topic.IsEnabled"
+                                                   @onchange="() => HandleToggleAsync(topic)" />
+                                            <span class="ovo-toggle-slider"></span>
+                                        </label>
+                                    </td>
+                                    <td class="col-topic">
+                                        <code>@topic.Topic</code>
+                                    </td>
+                                    <td class="col-number">@topic.MessagesReceived.ToString("N0")</td>
+                                    <td class="col-number">
+                                        @if (topic.IsEnabled)
+                                        {
+                                            <strong>@topic.MessagesLogged.ToString("N0")</strong>
+                                        }
+                                        else
+                                        {
+                                            <span style="color: var(--ovo-text-muted);">-</span>
+                                        }
+                                    </td>
+                                    <td class="col-rate">
+                                        @if (topic.IsEnabled && topic.MessagesReceived > 0)
+                                        {
+                                            var dedupRate = 100 - topic.LogPercentage;
+                                            <span class="@(dedupRate > 50 ? "ovo-badge ovo-badge-success" : "")">
+                                                @dedupRate.ToString("0")%
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="col-time">
+                                        @(topic.LastSeen?.ToString("HH:mm:ss") ?? "-")
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="ovo-footer">
+        <span>MQTT SQL Logger | Powered by <strong style="color: var(--ovo-primary);">Ovotrack</strong></span>
+    </footer>
+</div>
+
+@code {
+    private List<TopicViewModel>? _topics;
+    private StatsViewModel? _stats;
+    private bool _isLoading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshAsync();
+    }
+
+    private async Task RefreshAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            await Task.Delay(100); // Small delay to show loading state
+            _topics = FilterService.GetAllTopics().ToList();
+            _stats = FilterService.GetStats();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load topics");
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task HandleToggleAsync(TopicViewModel topic)
+    {
+        try
+        {
+            await FilterService.ToggleTopicAsync(topic.Topic);
+            _topics = FilterService.GetAllTopics().ToList();
+            _stats = FilterService.GetStats();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to toggle topic {Topic}", topic.Topic);
+        }
+    }
+
+    private void HandleGlobalToggle()
+    {
+        try
+        {
+            FilterService.SetGlobalLogging(!FilterService.GlobalLoggingEnabled);
+            _stats = FilterService.GetStats();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to toggle global logging");
+        }
+    }
+}

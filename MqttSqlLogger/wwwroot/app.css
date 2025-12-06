@@ -1,0 +1,825 @@
+/* ==========================================================================
+   MQTT Topic Filter - Ovotrack Design System
+   ========================================================================== */
+
+:root {
+    /* Primary Brand Colors */
+    --ovo-primary: #f69f07;
+    --ovo-primary-dark: #bf7812;
+    --ovo-primary-light: #f4b75b;
+
+    /* Brown Colors (Ovotrack signature) */
+    --ovo-brown: #bd6d29;
+    --ovo-brown-dark: #bf7812;
+
+    /* Secondary Colors */
+    --ovo-blue: #337ab7;
+    --ovo-blue-system: #1b75bb;
+
+    /* Status Colors */
+    --ovo-success: #1cba49;
+    --ovo-danger: #e91c22;
+    --ovo-warning: #f7b90d;
+
+    /* Background Colors */
+    --ovo-bg-cream: #f4e8d5;
+    --ovo-bg-cream-dark: #f5d099;
+    --ovo-bg-cream-light: #f7f7f7;
+    --ovo-bg-white: #fff;
+
+    /* Text Colors */
+    --ovo-text-dark: #333;
+    --ovo-text-medium: #4d4d4d;
+    --ovo-text-muted: #8c8c8c;
+    --ovo-text-light: #b3b3b3;
+
+    /* Border Colors */
+    --ovo-border: #ddd;
+    --ovo-border-light: #e1e1e1;
+
+    /* Layout */
+    --ovo-header-height: 56px;
+
+    /* Typography */
+    --ovo-font: "PT Sans", "Source Sans Pro", sans-serif;
+    --ovo-font-narrow: "PT Sans Narrow", "PT Sans", sans-serif;
+
+    /* Shadows */
+    --ovo-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --ovo-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+
+    /* Transitions */
+    --ovo-transition: all 0.2s ease;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 15px;
+    height: 100%;
+}
+
+body {
+    font-family: var(--ovo-font);
+    background-color: var(--ovo-bg-cream);
+    color: var(--ovo-text-dark);
+    line-height: 1.4;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+
+/* ==========================================================================
+   Layout
+   ========================================================================== */
+
+.ovo-app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.ovo-header {
+    height: var(--ovo-header-height);
+    background: linear-gradient(180deg, var(--ovo-primary) 0%, var(--ovo-primary-dark) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    color: white;
+}
+
+.ovo-header-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.ovo-header-title .material-symbols-outlined {
+    font-size: 1.5rem;
+}
+
+.ovo-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.ovo-content {
+    flex: 1;
+    padding: 1.5rem;
+}
+
+.ovo-footer {
+    padding: 1rem 1.5rem;
+    text-align: center;
+    color: var(--ovo-text-muted);
+    font-size: 0.85rem;
+    border-top: 1px solid var(--ovo-border);
+    background-color: var(--ovo-bg-white);
+}
+
+/* ==========================================================================
+   Stats Bar
+   ========================================================================== */
+
+.ovo-stats-bar {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.ovo-stat-card {
+    background-color: var(--ovo-bg-white);
+    border: 1px solid var(--ovo-border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    min-width: 140px;
+    box-shadow: var(--ovo-shadow-sm);
+}
+
+.ovo-stat-label {
+    font-family: var(--ovo-font-narrow);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--ovo-text-muted);
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+}
+
+.ovo-stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--ovo-brown);
+}
+
+.ovo-stat-value.primary {
+    color: var(--ovo-primary);
+}
+
+.ovo-stat-value.success {
+    color: var(--ovo-success);
+}
+
+/* ==========================================================================
+   Card
+   ========================================================================== */
+
+.ovo-card {
+    background-color: var(--ovo-bg-white);
+    border: 1px solid var(--ovo-border);
+    border-radius: 8px;
+    box-shadow: var(--ovo-shadow-sm);
+    overflow: hidden;
+}
+
+.ovo-card-header {
+    background-color: var(--ovo-bg-cream-light);
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--ovo-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ovo-card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ovo-brown);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ovo-card-title .material-symbols-outlined {
+    color: var(--ovo-brown);
+}
+
+.ovo-card-body {
+    padding: 0;
+}
+
+/* ==========================================================================
+   Table - Ovotrack4 Style
+   ========================================================================== */
+
+.ovo-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: var(--ovo-bg-white);
+    font-family: var(--ovo-font);
+}
+
+.ovo-table thead th {
+    background-color: var(--ovo-bg-white);
+    color: #757575;
+    font-family: var(--ovo-font-narrow);
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    border-bottom: none;
+    white-space: nowrap;
+}
+
+.ovo-table tbody tr {
+    transition: var(--ovo-transition);
+}
+
+.ovo-table tbody tr:nth-child(odd) {
+    background-color: var(--ovo-border-light);
+}
+
+.ovo-table tbody tr:nth-child(even) {
+    background-color: var(--ovo-bg-white);
+}
+
+.ovo-table tbody tr:hover {
+    background-color: rgba(27, 117, 187, 0.1);
+}
+
+.ovo-table tbody tr.disabled {
+    opacity: 0.5;
+}
+
+.ovo-table tbody td {
+    padding: 0.625rem 1rem;
+    vertical-align: middle;
+    color: var(--ovo-text-dark);
+    font-size: 0.9rem;
+    border: none;
+}
+
+/* Column styles */
+.col-toggle {
+    width: 60px;
+    text-align: center;
+}
+
+.col-topic {
+    min-width: 250px;
+}
+
+.col-topic code {
+    font-family: 'SF Mono', Consolas, monospace;
+    font-size: 0.85rem;
+    color: var(--ovo-blue-system);
+    background: none;
+    padding: 0;
+}
+
+.col-number {
+    width: 110px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.col-rate {
+    width: 80px;
+    text-align: right;
+}
+
+.col-time {
+    width: 100px;
+    text-align: right;
+    color: var(--ovo-text-muted);
+    font-size: 0.85rem;
+}
+
+/* ==========================================================================
+   Toggle Switch - Ovotrack Style
+   ========================================================================== */
+
+.ovo-toggle {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.ovo-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.ovo-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #c7c7c7;
+    border-radius: 24px;
+    transition: var(--ovo-transition);
+}
+
+.ovo-toggle-slider::before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: var(--ovo-transition);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.ovo-toggle input:checked + .ovo-toggle-slider {
+    background-color: var(--ovo-success);
+}
+
+.ovo-toggle input:checked + .ovo-toggle-slider::before {
+    transform: translateX(20px);
+}
+
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
+
+.ovo-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-family: var(--ovo-font);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: var(--ovo-transition);
+    border: none;
+    text-decoration: none;
+}
+
+.ovo-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.ovo-btn-header {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.ovo-btn-header:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.ovo-btn-primary {
+    background-color: var(--ovo-blue-system);
+    color: white;
+}
+
+.ovo-btn-primary:hover:not(:disabled) {
+    background-color: #15649e;
+}
+
+/* ==========================================================================
+   Badges
+   ========================================================================== */
+
+.ovo-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 4px;
+}
+
+.ovo-badge-success {
+    background-color: rgba(28, 186, 73, 0.15);
+    color: #0d7a2e;
+}
+
+.ovo-badge-muted {
+    background-color: var(--ovo-bg-cream);
+    color: var(--ovo-text-muted);
+}
+
+/* ==========================================================================
+   Empty State
+   ========================================================================== */
+
+.ovo-empty {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--ovo-text-muted);
+}
+
+.ovo-empty-icon {
+    font-size: 3rem;
+    color: var(--ovo-text-light);
+    margin-bottom: 1rem;
+}
+
+.ovo-empty-text {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    color: var(--ovo-text-medium);
+}
+
+.ovo-empty-subtext {
+    font-size: 0.875rem;
+}
+
+/* ==========================================================================
+   Loading
+   ========================================================================== */
+
+.ovo-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    color: var(--ovo-text-muted);
+}
+
+.ovo-spinner {
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--ovo-border);
+    border-top-color: var(--ovo-primary);
+    border-radius: 50%;
+    animation: ovo-spin 0.8s linear infinite;
+}
+
+@keyframes ovo-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ==========================================================================
+   Material Symbols
+   ========================================================================== */
+
+.material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    font-size: 1.25rem;
+    vertical-align: middle;
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+/* ==========================================================================
+   Main Switch Card
+   ========================================================================== */
+
+.ovo-main-switch-card {
+    background: linear-gradient(135deg, var(--ovo-success) 0%, #0d9c3a 100%);
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--ovo-shadow);
+    transition: var(--ovo-transition);
+}
+
+.ovo-main-switch-card.disabled {
+    background: linear-gradient(135deg, var(--ovo-text-muted) 0%, #6b6b6b 100%);
+}
+
+.ovo-main-switch-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ovo-main-switch-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: white;
+}
+
+.ovo-main-switch-info .material-symbols-outlined {
+    font-size: 2rem;
+}
+
+.ovo-main-switch-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.ovo-main-switch-subtitle {
+    font-size: 0.85rem;
+    opacity: 0.9;
+}
+
+.ovo-toggle-large {
+    width: 56px;
+    height: 30px;
+}
+
+.ovo-toggle-large .ovo-toggle-slider::before {
+    height: 24px;
+    width: 24px;
+}
+
+.ovo-toggle-large input:checked + .ovo-toggle-slider::before {
+    transform: translateX(26px);
+}
+
+/* ==========================================================================
+   Filter Components (Logs page)
+   ========================================================================== */
+
+.ovo-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.ovo-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.ovo-filter-label {
+    font-family: var(--ovo-font-narrow);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--ovo-text-muted);
+    text-transform: uppercase;
+}
+
+.ovo-input {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--ovo-border);
+    border-radius: 4px;
+    font-family: var(--ovo-font);
+    font-size: 0.9rem;
+    color: var(--ovo-text-dark);
+    background-color: var(--ovo-bg-white);
+    transition: var(--ovo-transition);
+}
+
+.ovo-input:focus {
+    outline: none;
+    border-color: var(--ovo-blue-system);
+    box-shadow: 0 0 0 2px rgba(27, 117, 187, 0.15);
+}
+
+.ovo-input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.ovo-input-group .ovo-input {
+    flex: 1;
+    padding-right: 2.5rem;
+}
+
+.ovo-input-clear {
+    position: absolute;
+    right: 0.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--ovo-text-muted);
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ovo-input-clear:hover {
+    color: var(--ovo-text-dark);
+}
+
+/* ==========================================================================
+   Logs Table
+   ========================================================================== */
+
+.ovo-table-logs tbody tr {
+    cursor: pointer;
+}
+
+.ovo-table-logs tbody tr.selected {
+    background-color: rgba(27, 117, 187, 0.15) !important;
+    border-left: 3px solid var(--ovo-blue-system);
+}
+
+.col-payload {
+    max-width: 400px;
+}
+
+.payload-preview {
+    font-family: 'SF Mono', Consolas, monospace;
+    font-size: 0.8rem;
+    color: var(--ovo-text-medium);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+}
+
+.col-qos {
+    width: 60px;
+    text-align: center;
+}
+
+/* ==========================================================================
+   Pagination
+   ========================================================================== */
+
+.ovo-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-top: 1px solid var(--ovo-border);
+}
+
+.ovo-pagination-info {
+    font-size: 0.9rem;
+    color: var(--ovo-text-muted);
+}
+
+/* ==========================================================================
+   Message Detail Panel
+   ========================================================================== */
+
+.ovo-detail-panel {
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 450px;
+    max-width: 100%;
+    background-color: var(--ovo-bg-white);
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    animation: slideIn 0.2s ease;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+}
+
+.ovo-detail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--ovo-border);
+    background-color: var(--ovo-bg-cream-light);
+}
+
+.ovo-detail-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ovo-brown);
+}
+
+.ovo-detail-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+}
+
+.ovo-detail-row {
+    display: flex;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--ovo-border-light);
+}
+
+.ovo-detail-row-full {
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.ovo-detail-label {
+    font-family: var(--ovo-font-narrow);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--ovo-text-muted);
+    text-transform: uppercase;
+    min-width: 80px;
+}
+
+.ovo-detail-value {
+    flex: 1;
+    font-size: 0.9rem;
+    color: var(--ovo-text-dark);
+    word-break: break-all;
+}
+
+.ovo-detail-payload {
+    background-color: var(--ovo-bg-cream-light);
+    border: 1px solid var(--ovo-border);
+    border-radius: 4px;
+    padding: 1rem;
+    font-family: 'SF Mono', Consolas, monospace;
+    font-size: 0.8rem;
+    color: var(--ovo-text-dark);
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin: 0;
+    max-height: 400px;
+}
+
+/* ==========================================================================
+   Icon Button
+   ========================================================================== */
+
+.ovo-btn-icon {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 4px;
+    background-color: transparent;
+    border: 1px solid var(--ovo-border);
+    color: var(--ovo-text-medium);
+}
+
+.ovo-btn-icon:hover:not(:disabled) {
+    background-color: var(--ovo-bg-cream-light);
+    color: var(--ovo-text-dark);
+}
+
+.ovo-btn-link {
+    background: none;
+    border: none;
+    color: var(--ovo-blue-system);
+    padding: 0.25rem 0.5rem;
+}
+
+.ovo-btn-link:hover {
+    text-decoration: underline;
+}
+
+/* Spin animation for refresh icon */
+.ovo-spin {
+    animation: ovo-spin 1s linear infinite;
+}
+
+/* ==========================================================================
+   Warning Badge
+   ========================================================================== */
+
+.ovo-badge-warning {
+    background-color: rgba(247, 185, 13, 0.2);
+    color: #9a7200;
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    .ovo-stats-bar {
+        flex-wrap: wrap;
+    }
+
+    .ovo-stat-card {
+        flex: 1;
+        min-width: 100px;
+    }
+
+    .col-number:nth-child(4),
+    .ovo-table th:nth-child(4),
+    .ovo-table td:nth-child(4) {
+        display: none;
+    }
+
+    .col-rate,
+    .ovo-table th:nth-child(5),
+    .ovo-table td:nth-child(5) {
+        display: none;
+    }
+
+    .ovo-detail-panel {
+        width: 100%;
+    }
+
+    .ovo-filter-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .col-payload {
+        display: none;
+    }
+}
